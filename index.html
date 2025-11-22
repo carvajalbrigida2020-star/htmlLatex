@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quadrática + LaTeX (MathJax)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Estilos mínimos solo para que se vea limpio -->
+    <style>
+      :root {
+        --bg: #f7f9fc;
+        --card: #fff;
+        --text: #1a2e3a;
+        --muted: #546e7a;
+        --accent: #2e9e73;
+        --border: #d9e2ec;
+      }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 2rem;
+      }
+      .wrap {
+        max-width: 800px;
+        margin-inline: auto;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.25rem 1.25rem;
+      }
+      h1 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.4rem;
+      }
+      p {
+        color: var(--muted);
+        margin: 0.5rem 0;
+      }
+      form {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+      label {
+        font-size: 0.9rem;
+      }
+      input[type="number"] {
+        width: 100%;
+        padding: 0.55rem 0.65rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      button {
+        grid-column: span 4;
+        padding: 0.75rem 1rem;
+        border: 0;
+        border-radius: 12px;
+        background: var(--accent);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .out {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #fafbff;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+      }
+      .note {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+      .row > div {
+        flex: 1;
+      }
+    </style>
+
+    <!-- Carga de MathJax para renderizar LaTeX en el navegador -->
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+    ></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Ecuación cuadrática con LaTeX</h1>
+        <p>
+          Ingresa los coeficientes \(a, b, c\) de \(ax^2 + bx + c = 0\).
+          Calcularemos \(\Delta = b^2 - 4ac\) y las raíces con la fórmula
+          general:
+        </p>
+        <div class="out" id="formulaGeneral">
+          $$x=\frac{-b \pm \sqrt{\,b^2-4ac\,}}{2a}$$
+        </div>
+
+        <form id="formQuad" onsubmit="event.preventDefault(); resolver();">
+          <div>
+            <label for="a">a</label>
+            <input type="number" id="a" value="1" step="any" required />
+          </div>
+          <div>
+            <label for="b">b</label>
+            <input type="number" id="b" value="2" step="any" required />
+          </div>
+          <div>
+            <label for="c">c</label>
+            <input type="number" id="c" value="1" step="any" required />
+          </div>
+          <div class="note">
+            Sugerencia: prueba \(a=1, b=2, c=1\) (raíz doble).
+          </div>
+          <button type="submit">Calcular</button>
+        </form>
+
+        <div class="out" id="pasos">
+          <!-- Aquí se mostrarán los pasos en LaTeX -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Renderiza LaTeX actualizando el DOM y luego llamando a MathJax.typeset()
+      function renderLatex(elementId, latexHTML) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = latexHTML;
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([el]);
+        } else if (window.MathJax && MathJax.typeset) {
+          MathJax.typeset([el]);
+        }
+      }
+
+      function pretty(n) {
+        // formatea números para que se vean limpios en la sustitución
+        const s = Number(n);
+        if (Number.isNaN(s)) return n;
+        return Math.abs(s) < 1e-10
+          ? "0"
+          : (Math.round(s * 1e6) / 1e6).toString();
+      }
+
+      function resolver() {
+        const a = parseFloat(document.getElementById("a").value);
+        const b = parseFloat(document.getElementById("b").value);
+        const c = parseFloat(document.getElementById("c").value);
+
+        if (!isFinite(a) || a === 0) {
+          renderLatex(
+            "pasos",
+            `<span class="note">Necesitamos \(a\\neq 0\) para que sea cuadrática.</span>`
+          );
+          return;
+        }
+
+        const delta = b * b - 4 * a * c;
+
+        // Construimos paso a paso en LaTeX
+        const latexPasos = `
+      <div>
+        <p><strong>1) Ecuación:</strong></p>
+        $$ ${pretty(a)}x^2 + ${pretty(b)}x + ${pretty(c)} = 0 $$
+        <p><strong>2) Discriminante:</strong></p>
+        $$ \\Delta = b^2 - 4ac = (${pretty(b)})^2 - 4(${pretty(a)})(${pretty(
+          c
+        )}) = ${pretty(b * b)} - ${pretty(4 * a * c)} = ${pretty(delta)} $$
+        <p><strong>3) Fórmula general:</strong></p>
+        $$ x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a} = \\frac{-(${pretty(
+          b
+        )}) \\pm \\sqrt{${pretty(delta)}}}{2(${pretty(a)})} $$
+        ${
+          delta > 0
+            ? `\\[
+               x_1 = \\frac{${pretty(-b)} + \\sqrt{${pretty(delta)}}}{${pretty(
+                2 * a
+              )}},
+               \\quad
+               x_2 = \\frac{${pretty(-b)} - \\sqrt{${pretty(delta)}}}{${pretty(
+                2 * a
+              )}}
+             \\]`
+            : delta === 0
+            ? `\\[
+               x = \\frac{${pretty(-b)}}{${pretty(2 * a)}} = ${pretty(
+                -b / (2 * a)
+              )} \\quad\\text{(raíz doble)}
+             \\]`
+            : `\\[
+               \\sqrt{\\Delta} = i\\sqrt{${pretty(-delta)}},\\quad
+               x = \\frac{${pretty(-b)} \\pm i\\sqrt{${pretty(
+                -delta
+              )}}}{${pretty(2 * a)}} \\quad\\text{(raíces complejas)}
+             \\]`
+        }
+      </div>`;
+
+        renderLatex("pasos", latexPasos);
+      }
+    </script>
+  </body>
+</html>
